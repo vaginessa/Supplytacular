@@ -4,22 +4,20 @@ import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 /**
  * Created by alexanderchiou on 7/26/16.
  */
 public class Request {
     public static final String PATH = "requests";
+    private static final String USER_ID_KEY = "user_id";
     private static final String LINK_KEY = "link";
     private static final String BODY_KEY = "body";
     private static final String STATE_KEY = "state";
     private static final String TIME_UPDATED_KEY = "time_updated";
 
-    private static final String OPEN = "open";
+    private static final String OPEN = "Open";
 
     public static void getRequests(Connection connection, HttpServletResponse resp, long userId) throws IOException {
         try {
@@ -45,6 +43,53 @@ public class Request {
         }
         catch (JSONException e) {
             resp.setStatus(Constants.BAD_REQUEST);
+        }
+        catch (IOException|SQLException exception) {
+            resp.setStatus(Constants.INTERNAL_SERVER_ERROR);
+            resp.getWriter().print(Utils.getStackTrace(exception));
+        }
+    }
+
+    public static void createRequest(Connection connection, HttpServletResponse resp, JSONObject request) throws IOException {
+        try {
+            // Parse request body
+            long userId = request.getLong(USER_ID_KEY);
+            String title = request.getString(Constants.TITLE_KEY);
+            String link = request.getString(LINK_KEY);
+            String body = request.getString(BODY_KEY);
+
+            // Insert user
+            String insertQuery = "INSERT INTO Request (user_id, title, link, body, state, time_updated)" +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+            statement.setLong(1, userId);
+            statement.setString(2, title);
+            statement.setString(3, link);
+            statement.setString(4, body);
+            statement.setString(5, OPEN);
+            statement.setLong(6, System.currentTimeMillis() / 1000L);
+
+            long requestId;
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException();
+            }
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    requestId = generatedKeys.getLong(1);
+                } else {
+                    throw new SQLException();
+                }
+            }
+
+            JSONObject requestInfo = new JSONObject();
+            requestInfo.put(Constants.ID_KEY, requestId);
+            statement.close();
+            resp.getWriter().print(requestInfo.toString());
+        }
+        catch (JSONException e) {
+            resp.setStatus(Constants.BAD_REQUEST);
+            resp.getWriter().print(e.getMessage());
         }
         catch (IOException|SQLException exception) {
             resp.setStatus(Constants.INTERNAL_SERVER_ERROR);

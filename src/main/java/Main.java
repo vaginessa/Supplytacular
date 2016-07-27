@@ -74,6 +74,10 @@ public class Main extends HttpServlet {
                         case User.PATH:
                             User.signUp(connection, response, jsonObject);
                             break;
+                        // PATH = /requests/
+                        case Request.PATH:
+                            Request.createRequest(connection, response, jsonObject);
+                            break;
                         default:
                             response.setStatus(Constants.NOT_FOUND);
                     }
