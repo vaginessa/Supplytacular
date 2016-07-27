@@ -17,6 +17,7 @@ import java.sql.SQLException;
 public class Main extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.addHeader("Access-Control-Allow-Origin", "http://supplyhero.herokuapp.com/");
         try {
             Connection connection = DatabaseUrl.extract().getConnection();
             if (connection != null) {
@@ -50,6 +51,8 @@ public class Main extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        response.addHeader("Access-Control-Allow-Origin", "http://supplyhero.herokuapp.com/");
+
         // Get request body into string
         StringBuilder requestBody = new StringBuilder();
         String line;
@@ -102,6 +105,8 @@ public class Main extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        response.addHeader("Access-Control-Allow-Origin", "http://supplyhero.herokuapp.com/");
+
         // Get request body into string
         StringBuilder requestBody = new StringBuilder();
         String line;
