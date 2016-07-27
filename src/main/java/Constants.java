@@ -9,7 +9,6 @@ public class Constants {
 
     public static final String READ_BODY_FAIL = "Failed to process the request body.";
     public static final String BAD_BODY_MESSAGE = "Request body wasn't a valid JSON.";
-    public static final String DB_CONNECTION_FAIL = "Unable to connect to database.";
 
     public static final String ID_KEY = "id";
     public static final String TITLE_KEY = "title";

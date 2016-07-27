@@ -25,6 +25,10 @@ public class Main extends HttpServlet {
 
                 switch (pathPieces[1]) {
                     // PATH = /requests/{user_id}
+                    case Request.PATH:
+                        long userId = Long.valueOf(pathPieces[2]);
+                        Request.getRequests(connection, response, userId);
+                        break;
                     // PATH = /users/{email}
                     case User.PATH:
                         String email = pathPieces[2];
