@@ -34,6 +34,9 @@ public class Main extends HttpServlet {
                         String email = pathPieces[2];
                         UserService.login(connection, response, email);
                         break;
+                    case PresetService.PATH:
+                        PresetService.getRequests(connection, response);
+                        break;
                     default:
                         response.setStatus(Constants.NOT_FOUND);
                 }
