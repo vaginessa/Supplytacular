@@ -8,7 +8,7 @@ import java.sql.*;
 /**
  * Created by alexanderchiou on 7/26/16.
  */
-public class User {
+public class UserService {
     public static final String PATH = "users";
     private static final String FIRST_NAME_KEY = "first_name";
     private static final String LAST_NAME_KEY = "last_name";
@@ -21,7 +21,7 @@ public class User {
                     ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
             statement.setString(1, email);
 
-            ResultSet resultSet =  statement.executeQuery();
+            ResultSet resultSet = statement.executeQuery();
             JSONObject userInfo = new JSONObject();
             if (resultSet.first()) {
                 userInfo.put(Constants.ID_KEY, resultSet.getLong(Constants.ID_KEY));

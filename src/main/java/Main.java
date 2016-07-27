@@ -25,14 +25,14 @@ public class Main extends HttpServlet {
 
                 switch (pathPieces[1]) {
                     // PATH = /requests/{user_id}
-                    case Request.PATH:
+                    case RequestService.PATH:
                         long userId = Long.valueOf(pathPieces[2]);
-                        Request.getRequests(connection, response, userId);
+                        RequestService.getRequests(connection, response, userId);
                         break;
                     // PATH = /users/{email}
-                    case User.PATH:
+                    case UserService.PATH:
                         String email = pathPieces[2];
-                        User.login(connection, response, email);
+                        UserService.login(connection, response, email);
                         break;
                     default:
                         response.setStatus(Constants.NOT_FOUND);
@@ -71,12 +71,12 @@ public class Main extends HttpServlet {
                     String[] pathPieces = path.split("/");
                     switch (pathPieces[1]) {
                         // PATH = /users/
-                        case User.PATH:
-                            User.signUp(connection, response, jsonObject);
+                        case UserService.PATH:
+                            UserService.signUp(connection, response, jsonObject);
                             break;
                         // PATH = /requests/
-                        case Request.PATH:
-                            Request.createRequest(connection, response, jsonObject);
+                        case RequestService.PATH:
+                            RequestService.createRequest(connection, response, jsonObject);
                             break;
                         default:
                             response.setStatus(Constants.NOT_FOUND);
@@ -123,8 +123,8 @@ public class Main extends HttpServlet {
                     String[] pathPieces = path.split("/");
                     switch (pathPieces[1]) {
                         // PATH = /requests/
-                        case Request.PATH:
-                            Request.updateRequest(connection, response, jsonObject);
+                        case RequestService.PATH:
+                            RequestService.updateRequest(connection, response, jsonObject);
                             break;
                         default:
                             response.setStatus(Constants.NOT_FOUND);
