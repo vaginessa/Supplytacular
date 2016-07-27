@@ -96,4 +96,31 @@ public class Request {
             resp.getWriter().print(Utils.getStackTrace(exception));
         }
     }
+
+    public static void updateRequest(Connection connection, HttpServletResponse resp, JSONObject request) throws IOException {
+        try {
+            // Parse request body
+            long requestId = request.getLong(Constants.ID_KEY);
+            String state = request.getString(STATE_KEY);
+
+            // Insert user
+            String insertQuery = "UPDATE Request " +
+                    "SET state = ?, time_updated = ? " +
+                    "WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, state);
+            statement.setLong(2, System.currentTimeMillis() / 1000L);
+            statement.setLong(3, requestId);
+            statement.executeUpdate();
+            statement.close();
+        }
+        catch (JSONException e) {
+            resp.setStatus(Constants.BAD_REQUEST);
+            resp.getWriter().print(e.getMessage());
+        }
+        catch (SQLException exception) {
+            resp.setStatus(Constants.INTERNAL_SERVER_ERROR);
+            resp.getWriter().print(Utils.getStackTrace(exception));
+        }
+    }
 }

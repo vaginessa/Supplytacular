@@ -96,6 +96,54 @@ public class Main extends HttpServlet {
         }
     }
 
+    @Override
+    protected void doPut(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        // Get request body into string
+        StringBuilder requestBody = new StringBuilder();
+        String line;
+        try {
+            BufferedReader reader = request.getReader();
+            while ((line = reader.readLine()) != null) {
+                requestBody.append(line);
+            }
+        } catch (IOException e) {
+            response.setStatus(Constants.INTERNAL_SERVER_ERROR);
+            response.getWriter().print(Constants.READ_BODY_FAIL);
+            return;
+        }
+
+        // Get connection to DB
+        try {
+            Connection connection = DatabaseUrl.extract().getConnection();
+            if (connection != null) {
+                try {
+                    JSONObject jsonObject = new JSONObject(requestBody.toString());
+                    String path = request.getRequestURI();
+                    String[] pathPieces = path.split("/");
+                    switch (pathPieces[1]) {
+                        // PATH = /requests/
+                        case Request.PATH:
+                            Request.updateRequest(connection, response, jsonObject);
+                            break;
+                        default:
+                            response.setStatus(Constants.NOT_FOUND);
+                    }
+                    connection.close();
+                } catch (JSONException e) {
+                    response.setStatus(Constants.BAD_REQUEST);
+                    response.getWriter().print(Constants.BAD_BODY_MESSAGE);
+                } catch (SQLException e) {
+                    response.setStatus(Constants.INTERNAL_SERVER_ERROR);
+                    response.getWriter().print(Utils.getStackTrace(e));
+                }
+            }
+        } catch (Exception e) {
+            response.setStatus(Constants.INTERNAL_SERVER_ERROR);
+            response.getWriter().print(Utils.getStackTrace(e));
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         Server server = new Server(Integer.valueOf(System.getenv("PORT")));
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
