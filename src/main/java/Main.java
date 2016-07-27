@@ -84,6 +84,10 @@ public class Main extends HttpServlet {
                         case RequestService.PATH:
                             RequestService.createRequest(connection, response, jsonObject);
                             break;
+                        // PATH = /presets/
+                        case PresetService.PATH:
+                            PresetService.addPreset(connection, response, jsonObject);
+                            break;
                         default:
                             response.setStatus(Constants.NOT_FOUND);
                     }

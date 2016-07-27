@@ -43,4 +43,32 @@ public class PresetService {
             resp.getWriter().print(Utils.getStackTrace(exception));
         }
     }
+
+    public static void addPreset(Connection connection, HttpServletResponse resp, JSONObject request) throws IOException {
+        try {
+            // Parse request body
+            String title = request.getString(Constants.TITLE_KEY);
+            String purchaseLink = request.getString(PURCHASE_LINK_KEY);
+            String imageLink = request.getString(IMAGE_LINK_KEY);
+
+            // Insert user
+            String insertQuery = "INSERT INTO Preset (title, purchase_link, image_link) " +
+                    "VALUES (?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(insertQuery);
+            statement.setString(1, title);
+            statement.setString(2, purchaseLink);
+            statement.setString(3, imageLink);
+
+            statement.executeUpdate();
+            statement.close();
+        }
+        catch (JSONException e) {
+            resp.setStatus(Constants.BAD_REQUEST);
+            resp.getWriter().print(e.getMessage());
+        }
+        catch (SQLException exception) {
+            resp.setStatus(Constants.INTERNAL_SERVER_ERROR);
+            resp.getWriter().print(Utils.getStackTrace(exception));
+        }
+    }
 }
