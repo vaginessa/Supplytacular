@@ -1,60 +1,105 @@
-import java.sql.*;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Map;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import static spark.Spark.*;
-import spark.template.freemarker.FreeMarkerEngine;
-import spark.ModelAndView;
-import static spark.Spark.get;
-
 import com.heroku.sdk.jdbc.DatabaseUrl;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-public class Main {
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 
-  public static void main(String[] args) {
+public class Main extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        try {
+            Connection connection = DatabaseUrl.extract().getConnection();
+            if (connection != null) {
+                String path = request.getRequestURI();
+                String[] pathPieces = path.split("/");
 
-    port(Integer.valueOf(System.getenv("PORT")));
-    staticFileLocation("/public");
+                if (pathPieces.length >= 3) {
+                    switch (pathPieces[1]) {
+                        // PATH = /requests/{user_id}
+                        // PATH = /users/{email}
+                        case User.PATH:
+                            String email = pathPieces[2];
+                            User.login(connection, response, email);
+                            break;
+                        default:
+                            response.setStatus(Constants.NOT_FOUND);
+                    }
+                } else {
+                    response.setStatus(Constants.NOT_FOUND);
+                }
+                connection.close();
+            }
+        } catch (Exception e) {
+            response.setStatus(Constants.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-    get("/hello", (req, res) -> "Hello World");
-
-    get("/", (request, response) -> {
-            Map<String, Object> attributes = new HashMap<>();
-            attributes.put("message", "Hello World!");
-
-            return new ModelAndView(attributes, "index.ftl");
-        }, new FreeMarkerEngine());
-
-    get("/db", (req, res) -> {
-      Connection connection = null;
-      Map<String, Object> attributes = new HashMap<>();
-      try {
-        connection = DatabaseUrl.extract().getConnection();
-
-        Statement stmt = connection.createStatement();
-        stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)");
-        stmt.executeUpdate("INSERT INTO ticks VALUES (now())");
-        ResultSet rs = stmt.executeQuery("SELECT tick FROM ticks");
-
-        ArrayList<String> output = new ArrayList<String>();
-        while (rs.next()) {
-          output.add( "Read from DB: " + rs.getTimestamp("tick"));
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        // Get request body into string
+        StringBuilder requestBody = new StringBuilder();
+        String line;
+        try {
+            BufferedReader reader = request.getReader();
+            while ((line = reader.readLine()) != null) {
+                requestBody.append(line);
+            }
+        } catch (IOException e) {
+            response.setStatus(Constants.INTERNAL_SERVER_ERROR);
+            response.getWriter().print(Constants.READ_BODY_FAIL);
+            return;
         }
 
-        attributes.put("results", output);
-        return new ModelAndView(attributes, "db.ftl");
-      } catch (Exception e) {
-        attributes.put("message", "There was an error: " + e);
-        return new ModelAndView(attributes, "error.ftl");
-      } finally {
-        if (connection != null) try{connection.close();} catch(SQLException e){}
-      }
-    }, new FreeMarkerEngine());
+        // Get connection to DB
+        try {
+            Connection connection = DatabaseUrl.extract().getConnection();
+            if (connection != null) {
+                // Business logic
+                try {
+                    JSONObject jsonObject = new JSONObject(requestBody.toString());
+                    String path = request.getRequestURI();
+                    String[] pathPieces = path.split("/");
+                    switch (pathPieces[1]) {
+                        // PATH = /users/
+                        case User.PATH:
+                            User.signUp(connection, response, jsonObject);
+                            break;
+                        default:
+                            response.setStatus(Constants.NOT_FOUND);
+                    }
+                    connection.close();
+                } catch (JSONException e) {
+                    response.setStatus(Constants.BAD_REQUEST);
+                    response.getWriter().print(Constants.BAD_BODY_MESSAGE);
+                } catch (SQLException e) {
+                    response.setStatus(Constants.INTERNAL_SERVER_ERROR);
+                    response.getWriter().print(Utils.getStackTrace(e));
+                }
+            }
+        } catch (Exception e) {
+            response.setStatus(Constants.INTERNAL_SERVER_ERROR);
+            response.getWriter().print(Utils.getStackTrace(e));
+        }
+    }
 
-  }
-
+    public static void main(String[] args) throws Exception {
+        Server server = new Server(Integer.valueOf(System.getenv("PORT")));
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        server.setHandler(context);
+        context.addServlet(new ServletHolder(new Main()), "/*");
+        server.start();
+        server.join();
+    }
 }
