@@ -16,8 +16,9 @@ public class User {
 
     public static void login(Connection connection, HttpServletResponse resp, String email) throws IOException {
         try {
-            String getTopTenQuery = "SELECT * FROM Person WHERE email = ?;";
-            PreparedStatement statement = connection.prepareStatement(getTopTenQuery);
+            String getUserInfoQuery = "SELECT * FROM Person WHERE email = ?;";
+            PreparedStatement statement = connection.prepareStatement(getUserInfoQuery,
+                    ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
             statement.setString(1, email);
 
             ResultSet resultSet =  statement.executeQuery();

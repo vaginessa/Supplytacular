@@ -23,19 +23,15 @@ public class Main extends HttpServlet {
                 String path = request.getRequestURI();
                 String[] pathPieces = path.split("/");
 
-                if (pathPieces.length >= 3) {
-                    switch (pathPieces[1]) {
-                        // PATH = /requests/{user_id}
-                        // PATH = /users/{email}
-                        case User.PATH:
-                            String email = pathPieces[2];
-                            User.login(connection, response, email);
-                            break;
-                        default:
-                            response.setStatus(Constants.NOT_FOUND);
-                    }
-                } else {
-                    response.setStatus(Constants.NOT_FOUND);
+                switch (pathPieces[1]) {
+                    // PATH = /requests/{user_id}
+                    // PATH = /users/{email}
+                    case User.PATH:
+                        String email = pathPieces[2];
+                        User.login(connection, response, email);
+                        break;
+                    default:
+                        response.setStatus(Constants.NOT_FOUND);
                 }
                 connection.close();
             }
@@ -65,7 +61,6 @@ public class Main extends HttpServlet {
         try {
             Connection connection = DatabaseUrl.extract().getConnection();
             if (connection != null) {
-                // Business logic
                 try {
                     JSONObject jsonObject = new JSONObject(requestBody.toString());
                     String path = request.getRequestURI();
